@@ -114,7 +114,7 @@ else
 end
 
 -- Main Tab
-local AutoFishTab = Window.Main:Section({
+local AutoFishTab = Main:Section({
 	Title = "Fishing Automation",
 	Icon = "fish",
     Opened = true,
