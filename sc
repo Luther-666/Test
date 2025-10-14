@@ -36,7 +36,7 @@ local Tabs = {
 
 Window:SelectTab(1)
 
--- Main function
+-- Global function
 
 
 -- Information Tab
