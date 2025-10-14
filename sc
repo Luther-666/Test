@@ -109,3 +109,9 @@ else
         Color = "Red",
     })
 end
+
+-- Main Tab
+local AutoFishSection = Main:Section({
+	Title = "Fishing Automation",
+	Icon = "fish"
+})
