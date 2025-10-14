@@ -35,17 +35,16 @@ local Tabs = {
 }
 
 -- Global function
-local Jawa = Window:Section({
-    Title = "Section for the tabs",
-    Icon = "bird",
-    Opened = true,
-}) --- Section
+local Sections = {
+    Main = Window:Section({ Title = "Main", Opened = true }),
+    Settings = Window:Section({ Title = "UI Settings", Opened = true }),
+}
 
-local Main = Jawa:Tab({
-    Title = "Main Tab",
-    Icon = "fish",
-    Locked = false,
-}) --- Tab
+local Tabs = {
+    Elements = Sections.Main:Tab({ Title = "Player", Icon = "lucide:user", Desc = "Main Player Section" }),
+    Appearance = Sections.Settings:Tab({ Title = "loc:APPEARANCE", Icon = "brush" }),
+    Visual = Sections.Main:Tab({ Title = "Visuals", Icon = "lucide:eye", Desc = "Visual" }),
+}
 
 
 -- Information Tab
