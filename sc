@@ -27,7 +27,7 @@ local Window = WindUI:CreateWindow({
 local Tabs = {
     Info = Window:Tab({ Title = "Information", Icon = "door-open" }),
     divider1 = Window:Divider(),
-    
+
     Mains = Window:Tab({ Title = "Main", Icon = "folder" }),
     Automation = Window:Tab({ Title = "Automation", Icon = "shopping-cart" }),
     Shops = Window:Tab({ Title = "Shop", Icon = "door-open" }),
@@ -35,6 +35,17 @@ local Tabs = {
 }
 
 -- Global function
+local Jawa = Window:Section({
+    Title = "Section for the tabs",
+    Icon = "bird",
+    Opened = true,
+}) --- Section
+
+local Main = Jawa:Tab({
+    Title = "Main Tab",
+    Icon = "fish",
+    Locked = false,
+}) --- Tab
 
 
 -- Information Tab
@@ -114,3 +125,6 @@ else
         Color = "Red",
     })
 end
+
+
+-- Main Tab
