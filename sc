@@ -114,8 +114,8 @@ else
 end
 
 -- Main Tab
-local AutoFishTab = Main:Section({
-	Title = "Fishing Automation",
-	Icon = "fish",
-    Opened = true,
+Tabs.Main.Toggle({
+    Title = "Auto Fish",
+    Value true,
+    Callback = function(state) print("Auto Fish: " .. tostring(state)) end
 })
