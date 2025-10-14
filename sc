@@ -112,3 +112,10 @@ else
         Color = "Red",
     })
 end
+
+-- Main Tab
+local AutoFishTab = Window.Main:Section({
+	Title = "Fishing Automation",
+	Icon = "fish",
+    Opened = true,
+})
