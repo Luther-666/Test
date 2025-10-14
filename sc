@@ -109,3 +109,8 @@ else
         Color = "Red",
     })
 end
+
+Tabs.Info:Paragraph({
+    Title = "Script Features",
+    Desc = "KONTOL"
+})
