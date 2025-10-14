@@ -26,11 +26,15 @@ local Window = WindUI:CreateWindow({
 
 local Tabs = {
     Info = Window:Tab({ Title = "Information", Icon = "door-open" }),
-    Main = Window:Tab({ Title = "Main", Icon = "folder" }),
-    Auto = Window:Tab({ Title = "Automation", Icon = "shopping-cart" }),
-    Shop = Window:Tab({ Title = "Shop", Icon = "door-open" }),
+    divider1 = Window:Divider(),
+
+    Mains = Window:Tab({ Title = "Main", Icon = "folder" }),
+    Automation = Window:Tab({ Title = "Automation", Icon = "shopping-cart" }),
+    Shops = Window:Tab({ Title = "Shop", Icon = "door-open" }),
     Misc = Window:Tab({ Title = "Misc", Icon = "folder" }),
 }
+
+Window:SelectTab(1)
 
 -- Global function
 
@@ -112,10 +116,3 @@ else
         Color = "Red",
     })
 end
-
--- Main Tab
-Tabs.Main.Toggle({
-    Title = "Auto Fish",
-    Value true,
-    Callback = function(state) print("Auto Fish: " .. tostring(state)) end
-})
