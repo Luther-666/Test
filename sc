@@ -37,11 +37,7 @@ local Tabs = {
 Window:SelectTab(1)
 
 -- Main function
-Tabs.Mains:Toggle({
-    Title = "Auto Fish",
-    Value false,
-    Callback = function(state) print("Starting: " .. tostring(state)) end
-})
+
 
 -- Information Tab
 local InviteCode = "XErAwERk"
