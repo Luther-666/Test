@@ -112,56 +112,70 @@ local function findSwipeButton()
 end
 
 local function performSwipe()
-    -- Method 1: Find and click swipe button
-    local swipeButton = findSwipeButton()
-    
-    if swipeButton then
-        pcall(function()
-            local pos = swipeButton.AbsolutePosition
-            local size = swipeButton.AbsoluteSize
-            
-            -- Click the button
-            VirtualInputManager:SendMouseButtonEvent(
-                pos.X + size.X/2,
-                pos.Y + size.Y/2,
-                0, true, game, 0
-            )
-            task.wait(0.05)
-            VirtualInputManager:SendMouseButtonEvent(
-                pos.X + size.X/2,
-                pos.Y + size.Y/2,
-                0, false, game, 0
-            )
-            
-            print("Clicked swipe button!")
-            return true
-        end)
-    end
-    
-    -- Method 2: Simulate swipe gesture (drag from left to right)
     pcall(function()
         local camera = workspace.CurrentCamera
         local screenSize = camera.ViewportSize
         
-        local startX = screenSize.X * 0.2
-        local endX = screenSize.X * 0.8
-        local midY = screenSize.Y * 0.25
+        -- Click di tengah layar (area garis putih pack)
+        local centerX = screenSize.X * 0.5
+        local centerY = screenSize.Y * 0.35 -- Agak ke atas dari center (area pack)
         
-        -- Mouse down
-        VirtualInputManager:SendMouseButtonEvent(startX, midY, 0, true, game, 0)
+        print(string.format("Clicking at: X=%.0f, Y=%.0f", centerX, centerY))
+        
+        -- Method 1: Single click di tengah
+        VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 0)
         task.wait(0.05)
+        VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 0)
         
-        -- Move right (simulate swipe)
-        for i = 1, 10 do
-            local x = startX + (endX - startX) * (i / 10)
-            VirtualInputManager:SendMouseMoveEvent(x, midY, game)
-            task.wait(0.01)
+        print("Clicked pack area!")
+    end)
+    
+    -- Method 2: Coba klik di beberapa posisi (garis putih bisa ada di berbagai tempat)
+    pcall(function()
+        local camera = workspace.CurrentCamera
+        local screenSize = camera.ViewportSize
+        
+        -- Coba klik di 3 posisi berbeda
+        local positions = {
+            {x = screenSize.X * 0.5, y = screenSize.Y * 0.3},  -- Atas
+            {x = screenSize.X * 0.5, y = screenSize.Y * 0.4},  -- Tengah
+            {x = screenSize.X * 0.5, y = screenSize.Y * 0.5}   -- Bawah
+        }
+        
+        for _, pos in ipairs(positions) do
+            VirtualInputManager:SendMouseButtonEvent(pos.x, pos.y, 0, true, game, 0)
+            task.wait(0.02)
+            VirtualInputManager:SendMouseButtonEvent(pos.x, pos.y, 0, false, game, 0)
+            task.wait(0.1)
         end
+    end)
+    
+    -- Method 3: Try to find and click the actual GUI element
+    local success = pcall(function()
+        local playerGui = player:WaitForChild("PlayerGui")
+        local feedbackGui = playerGui:FindFirstChild("Feedback")
         
-        -- Mouse up
-        VirtualInputManager:SendMouseButtonEvent(endX, midY, 0, false, game, 0)
-        
-        print("Performed swipe gesture!")
+        if feedbackGui and feedbackGui.Enabled then
+            -- Look for the main frame/button
+            for _, descendant in pairs(feedbackGui:GetDescendants()) do
+                -- Look for Frame or ImageLabel that might be clickable
+                if (descendant:IsA("Frame") or descendant:IsA("ImageLabel")) and descendant.Visible then
+                    local pos = descendant.AbsolutePosition
+                    local size = descendant.AbsoluteSize
+                    
+                    -- Click center of the frame
+                    local clickX = pos.X + size.X * 0.5
+                    local clickY = pos.Y + size.Y * 0.35 -- Click pada bagian atas (garis putih)
+                    
+                    VirtualInputManager:SendMouseButtonEvent(clickX, clickY, 0, true, game, 0)
+                    task.wait(0.05)
+                    VirtualInputManager:SendMouseButtonEvent(clickX, clickY, 0, false, game, 0)
+                    
+                    print("Clicked GUI element:", descendant.Name)
+                    break
+                end
+            end
+        end
     end)
     
     return true
