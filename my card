@@ -1,0 +1,454 @@
+-- Load WindUI Library
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/source.lua"))()
+
+-- Services
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+
+-- Remote Events dari Cobalt Log
+local ItemsRemote = ReplicatedStorage.Shared.Utilities.NetworkUtility.Events.Items
+local ReplicatorRemote = ReplicatedStorage.Shared.Utilities.NetworkUtility.Events.Replicator
+
+-- Auto Pack Variables
+local AutoPackConfig = {
+    Enabled = false,
+    OpenDelay = 0.5,
+    MaxPacks = 100,
+    PacksOpened = 0,
+    TotalCardsReceived = {}
+}
+
+-- Create Window
+local Window = WindUI:CreateWindow({
+    Title = "Card Shop Pack Opener",
+    Subtitle = "Auto Unpack Script",
+    Icon = "rbxassetid://10723434711",
+    Author = "PackDev",
+    Folder = "CardShopConfig",
+    Size = UDim2.fromOffset(580, 460),
+    KeySystem = false,
+    Transparent = false,
+    Theme = "Dark",
+    SideBarWidth = 170,
+    HasOutline = true
+})
+
+Window:Notify({
+    Title = "Script Loaded!",
+    Description = "Card Shop Auto Opener siap digunakan",
+    Duration = 5
+})
+
+-- ============================================
+-- AUTO PACK FUNCTIONS
+-- ============================================
+
+local function openPack()
+    local success, error = pcall(function()
+        -- Berdasarkan log Cobalt: Items:FireServer("Unpack")
+        ItemsRemote:FireServer("Unpack")
+    end)
+    
+    if success then
+        AutoPackConfig.PacksOpened = AutoPackConfig.PacksOpened + 1
+        return true
+    else
+        warn("Error membuka pack:", error)
+        return false
+    end
+end
+
+-- Monitor cards received dari Replicator
+local cardsReceived = {}
+ReplicatorRemote.OnClientEvent:Connect(function(eventType, action, data)
+    if eventType == "Cards" and action == "Update" then
+        for cardName, cardData in pairs(data) do
+            if not cardsReceived[cardName] then
+                cardsReceived[cardName] = 0
+            end
+            
+            -- Track total cards
+            if AutoPackConfig.TotalCardsReceived[cardName] then
+                AutoPackConfig.TotalCardsReceived[cardName] = AutoPackConfig.TotalCardsReceived[cardName] + 1
+            else
+                AutoPackConfig.TotalCardsReceived[cardName] = 1
+            end
+        end
+    end
+end)
+
+local function startAutoOpen()
+    if AutoPackConfig.Enabled then
+        Window:Notify({
+            Title = "Warning",
+            Description = "Auto open sudah berjalan!",
+            Duration = 3
+        })
+        return
+    end
+    
+    AutoPackConfig.Enabled = true
+    AutoPackConfig.PacksOpened = 0
+    AutoPackConfig.TotalCardsReceived = {}
+    
+    Window:Notify({
+        Title = "Auto Open Started",
+        Description = string.format("Target: %d packs", AutoPackConfig.MaxPacks),
+        Duration = 4
+    })
+    
+    spawn(function()
+        while AutoPackConfig.Enabled and AutoPackConfig.PacksOpened < AutoPackConfig.MaxPacks do
+            local opened = openPack()
+            
+            if opened then
+                -- Notifikasi setiap 10 packs
+                if AutoPackConfig.PacksOpened % 10 == 0 and AutoPackConfig.PacksOpened > 0 then
+                    Window:Notify({
+                        Title = "Progress",
+                        Description = string.format("%d/%d packs opened", 
+                            AutoPackConfig.PacksOpened, 
+                            AutoPackConfig.MaxPacks),
+                        Duration = 2
+                    })
+                end
+                
+                task.wait(AutoPackConfig.OpenDelay)
+            else
+                task.wait(2)
+            end
+        end
+        
+        AutoPackConfig.Enabled = false
+        
+        -- Summary cards received
+        local summary = "Cards Received:\n"
+        for cardName, amount in pairs(AutoPackConfig.TotalCardsReceived) do
+            summary = summary .. string.format("%s: %d\n", cardName, amount)
+        end
+        
+        Window:Notify({
+            Title = "Auto Open Complete",
+            Description = string.format("Total: %d packs dibuka!", AutoPackConfig.PacksOpened),
+            Duration = 5
+        })
+        
+        print("======================")
+        print(summary)
+        print("======================")
+    end)
+end
+
+local function stopAutoOpen()
+    AutoPackConfig.Enabled = false
+    Window:Notify({
+        Title = "Auto Open Stopped",
+        Description = string.format("Total: %d packs dibuka", AutoPackConfig.PacksOpened),
+        Duration = 4
+    })
+end
+
+-- ============================================
+-- GUI TABS
+-- ============================================
+
+-- Tab 1: Auto Pack
+local PackTab = Window:Tab({
+    Name = "Auto Pack",
+    Icon = "rbxassetid://10723345866",
+    Color = Color3.fromRGB(255, 100, 100)
+})
+
+local AutoPackSection = PackTab:Section({
+    Name = "Auto Pack Opener"
+})
+
+-- Toggle Auto Open
+AutoPackSection:Toggle({
+    Name = "Enable Auto Unpack",
+    Description = "Aktifkan pembukaan pack otomatis",
+    Default = false,
+    Callback = function(value)
+        if value then
+            startAutoOpen()
+        else
+            stopAutoOpen()
+        end
+    end
+})
+
+-- Slider Max Packs
+AutoPackSection:Slider({
+    Name = "Max Packs",
+    Description = "Maksimal pack yang akan dibuka",
+    Min = 1,
+    Max = 1000,
+    Default = 100,
+    Callback = function(value)
+        AutoPackConfig.MaxPacks = value
+    end
+})
+
+-- Slider Open Delay
+AutoPackSection:Slider({
+    Name = "Open Delay (seconds)",
+    Description = "Delay antar pembukaan pack",
+    Min = 0.1,
+    Max = 5,
+    Default = 0.5,
+    Callback = function(value)
+        AutoPackConfig.OpenDelay = value
+    end
+})
+
+-- Status Section
+local StatusSection = PackTab:Section({
+    Name = "Status & Info"
+})
+
+StatusSection:Button({
+    Name = "Check Progress",
+    Description = "Lihat progress pembukaan pack",
+    Callback = function()
+        local cardsList = ""
+        local count = 0
+        for cardName, amount in pairs(AutoPackConfig.TotalCardsReceived) do
+            if count < 5 then -- Show first 5 cards
+                cardsList = cardsList .. string.format("%s: %d\n", cardName, amount)
+                count = count + 1
+            end
+        end
+        
+        Window:Notify({
+            Title = "Pack Progress",
+            Description = string.format("Packs Opened: %d/%d\nStatus: %s\n\nTop Cards:\n%s", 
+                AutoPackConfig.PacksOpened,
+                AutoPackConfig.MaxPacks,
+                AutoPackConfig.Enabled and "Running" or "Stopped",
+                cardsList ~= "" and cardsList or "No cards yet"),
+            Duration = 7
+        })
+    end
+})
+
+StatusSection:Button({
+    Name = "Reset Counter",
+    Description = "Reset counter pack yang dibuka",
+    Callback = function()
+        AutoPackConfig.PacksOpened = 0
+        AutoPackConfig.TotalCardsReceived = {}
+        Window:Notify({
+            Title = "Counter Reset",
+            Description = "Counter direset ke 0",
+            Duration = 3
+        })
+    end
+})
+
+StatusSection:Button({
+    Name = "Show All Cards",
+    Description = "Tampilkan semua kartu yang didapat",
+    Callback = function()
+        print("=== ALL CARDS RECEIVED ===")
+        for cardName, amount in pairs(AutoPackConfig.TotalCardsReceived) do
+            print(string.format("%s: %d", cardName, amount))
+        end
+        print("========================")
+        
+        Window:Notify({
+            Title = "Cards List",
+            Description = "Cek console (F9) untuk list lengkap",
+            Duration = 4
+        })
+    end
+})
+
+-- Pack Info Section
+local PackInfoSection = PackTab:Section({
+    Name = "Pack Information"
+})
+
+PackInfoSection:Label({
+    Text = "Berdasarkan log Cobalt:"
+})
+
+PackInfoSection:Label({
+    Text = "• Slayers Card Pack: 33 opened"
+})
+
+PackInfoSection:Label({
+    Text = "• Pirates Card Pack: 57 opened"
+})
+
+PackInfoSection:Label({
+    Text = "• Sorcerers Card Pack: 51 opened"
+})
+
+-- Tab 2: Manual Pack
+local ManualTab = Window:Tab({
+    Name = "Manual",
+    Icon = "rbxassetid://10747372992",
+    Color = Color3.fromRGB(100, 150, 255)
+})
+
+local ManualSection = ManualTab:Section({
+    Name = "Manual Pack Opening"
+})
+
+ManualSection:Button({
+    Name = "Open 1 Pack",
+    Description = "Buka 1 pack secara manual",
+    Callback = function()
+        local success = openPack()
+        if success then
+            Window:Notify({
+                Title = "Pack Opened",
+                Description = "1 pack berhasil dibuka!",
+                Duration = 3
+            })
+        else
+            Window:Notify({
+                Title = "Error",
+                Description = "Gagal membuka pack",
+                Duration = 3
+            })
+        end
+    end
+})
+
+ManualSection:Button({
+    Name = "Open 10 Packs",
+    Description = "Buka 10 pack sekaligus",
+    Callback = function()
+        spawn(function()
+            for i = 1, 10 do
+                openPack()
+                task.wait(0.3)
+            end
+            Window:Notify({
+                Title = "Batch Complete",
+                Description = "10 packs telah dibuka!",
+                Duration = 3
+            })
+        end)
+    end
+})
+
+local TestSection = ManualTab:Section({
+    Name = "Testing & Debug"
+})
+
+TestSection:Button({
+    Name = "Test Remote Connection",
+    Description = "Cek koneksi ke remote Items",
+    Callback = function()
+        if ItemsRemote then
+            Window:Notify({
+                Title = "Remote Found",
+                Description = "Items remote terdeteksi!",
+                Duration = 3
+            })
+            print("Items Remote Path:", ItemsRemote:GetFullName())
+        else
+            Window:Notify({
+                Title = "Error",
+                Description = "Items remote tidak ditemukan!",
+                Duration = 3
+            })
+        end
+    end
+})
+
+TestSection:Button({
+    Name = "Monitor Replicator",
+    Description = "Listen to Replicator events",
+    Callback = function()
+        local monitoring = true
+        Window:Notify({
+            Title = "Monitoring Started",
+            Description = "Check console (F9) for events",
+            Duration = 3
+        })
+        
+        local connection
+        connection = ReplicatorRemote.OnClientEvent:Connect(function(...)
+            local args = {...}
+            print("=== REPLICATOR EVENT ===")
+            for i, v in ipairs(args) do
+                print(string.format("Arg %d:", i), v)
+            end
+            print("=======================")
+        end)
+        
+        task.wait(10)
+        connection:Disconnect()
+        print("Monitoring stopped after 10 seconds")
+    end
+})
+
+-- Tab 3: Settings
+local SettingsTab = Window:Tab({
+    Name = "Settings",
+    Icon = "rbxassetid://10734950309",
+    Color = Color3.fromRGB(150, 100, 255)
+})
+
+local SettingsSection = SettingsTab:Section({
+    Name = "Script Settings"
+})
+
+SettingsSection:Button({
+    Name = "Rejoin Server",
+    Description = "Rejoin ke server saat ini",
+    Callback = function()
+        game:GetService("TeleportService"):TeleportToPlaceInstance(
+            game.PlaceId, 
+            game.JobId, 
+            player
+        )
+    end
+})
+
+SettingsSection:Button({
+    Name = "Copy Remote Path",
+    Description = "Copy path Items remote",
+    Callback = function()
+        if ItemsRemote then
+            setclipboard(ItemsRemote:GetFullName())
+            Window:Notify({
+                Title = "Copied",
+                Description = "Remote path dicopy!",
+                Duration = 3
+            })
+        end
+    end
+})
+
+local InfoSection = SettingsTab:Section({
+    Name = "Information"
+})
+
+InfoSection:Label({
+    Text = "Remote: Items"
+})
+
+InfoSection:Label({
+    Text = "Event: Unpack"
+})
+
+InfoSection:Label({
+    Text = "Path: ReplicatedStorage.Shared..."
+})
+
+InfoSection:Label({
+    Text = "...Utilities.NetworkUtility.Events.Items"
+})
+
+-- Final notification
+print("======================")
+print("Card Shop Auto Opener Loaded!")
+print("Remote Events Configured:")
+print("- Items Remote:", ItemsRemote:GetFullName())
+print("- Replicator Remote:", ReplicatorRemote:GetFullName())
+print("======================")
