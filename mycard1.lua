@@ -121,7 +121,7 @@ local function performSwipe()
         -- Posisi swipe: dari kiri ke kanan di area garis putih (bagian atas pack)
         local startX = screenSize.X * 0.3  -- Mulai dari kiri
         local endX = screenSize.X * 0.7    -- Sampai kanan
-        local swipeY = screenSize.Y * 0.35 -- Di area garis putih (bagian atas pack)
+        local swipeY = screenSize.Y * 0.25 -- Di area garis putih (bagian atas pack)
         
         print(string.format("Performing swipe from X=%.0f to X=%.0f at Y=%.0f", startX, endX, swipeY))
         
@@ -160,7 +160,7 @@ local function performSwipe()
                         -- Swipe pada element ini
                         local startX = pos.X + size.X * 0.3
                         local endX = pos.X + size.X * 0.7
-                        local swipeY = pos.Y + size.Y * 0.3 -- Area garis putih
+                        local swipeY = pos.Y + size.Y * 0.25 -- Area garis putih
                         
                         -- Hold, swipe, release
                         VirtualInputManager:SendMouseButtonEvent(startX, swipeY, 0, true, game, 0)
