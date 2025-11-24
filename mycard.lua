@@ -145,7 +145,7 @@ local function performSwipe()
         
         local startX = screenSize.X * 0.2
         local endX = screenSize.X * 0.8
-        local midY = screenSize.Y * 0.2
+        local midY = screenSize.Y * 0.25
         
         -- Mouse down
         VirtualInputManager:SendMouseButtonEvent(startX, midY, 0, true, game, 0)
