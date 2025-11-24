@@ -118,63 +118,66 @@ local function performSwipe()
         local camera = workspace.CurrentCamera
         local screenSize = camera.ViewportSize
         
-        -- Posisi swipe: dari kiri ke kanan di area garis putih (bagian atas pack)
+        -- GARIS MERAH ada di tengah pack! 
+        -- Posisi Y nya di tengah layar (50%), bukan di atas!
         local startX = screenSize.X * 0.3  -- Mulai dari kiri
         local endX = screenSize.X * 0.7    -- Sampai kanan
-        local swipeY = screenSize.Y * 0.25 -- Di area garis putih (bagian atas pack)
+        local swipeY = screenSize.Y * 0.5  -- DI TENGAH LAYAR - GARIS MERAH!
         
-        print(string.format("Performing swipe from X=%.0f to X=%.0f at Y=%.0f", startX, endX, swipeY))
+        print(string.format("Swiping at RED LINE: from X=%.0f to X=%.0f at Y=%.0f", startX, endX, swipeY))
         
-        -- HOLD mouse button (click down)
+        -- HOLD mouse button (click down) di garis merah
         VirtualInputManager:SendMouseButtonEvent(startX, swipeY, 0, true, game, 0)
         task.wait(0.05)
         
-        -- SWIPE ke kanan sambil tetap hold
-        local steps = 20
+        -- SWIPE ke kanan sambil tetap hold - POINTER STAY DI GARIS MERAH
+        local steps = 25
         for i = 1, steps do
             local currentX = startX + (endX - startX) * (i / steps)
             VirtualInputManager:SendMouseMoveEvent(currentX, swipeY, game)
-            task.wait(0.02) -- Smooth swipe
+            task.wait(0.015) -- Smooth swipe
         end
         
         -- RELEASE mouse button (click up)
         VirtualInputManager:SendMouseButtonEvent(endX, swipeY, 0, false, game, 0)
         
-        print("Swipe completed!")
+        print("Swipe completed at RED LINE!")
         success = true
     end)
     
-    -- Jika method 1 gagal, coba dengan GUI element
+    -- Method 2: Coba cari GUI element dan swipe di tengahnya
     if not success then
         pcall(function()
             local playerGui = player:WaitForChild("PlayerGui")
             local feedbackGui = playerGui:FindFirstChild("Feedback")
             
             if feedbackGui and feedbackGui.Enabled then
-                -- Cari frame yang bisa di-swipe
+                -- Cari frame pack
                 for _, descendant in pairs(feedbackGui:GetDescendants()) do
                     if (descendant:IsA("Frame") or descendant:IsA("ImageLabel") or descendant:IsA("ImageButton")) and descendant.Visible then
                         local pos = descendant.AbsolutePosition
                         local size = descendant.AbsoluteSize
                         
-                        -- Swipe pada element ini
-                        local startX = pos.X + size.X * 0.3
-                        local endX = pos.X + size.X * 0.7
-                        local swipeY = pos.Y + size.Y * 0.25 -- Area garis putih
+                        -- Swipe DI TENGAH element (garis merah)
+                        local startX = pos.X + size.X * 0.25
+                        local endX = pos.X + size.X * 0.75
+                        local swipeY = pos.Y + size.Y * 0.5 -- TENGAH! GARIS MERAH!
                         
-                        -- Hold, swipe, release
+                        print(string.format("Swiping on GUI at RED LINE: %s", descendant.Name))
+                        
+                        -- Hold, swipe di garis merah, release
                         VirtualInputManager:SendMouseButtonEvent(startX, swipeY, 0, true, game, 0)
                         task.wait(0.05)
                         
-                        for i = 1, 15 do
-                            local currentX = startX + (endX - startX) * (i / 15)
+                        for i = 1, 20 do
+                            local currentX = startX + (endX - startX) * (i / 20)
                             VirtualInputManager:SendMouseMoveEvent(currentX, swipeY, game)
-                            task.wait(0.02)
+                            task.wait(0.015)
                         end
                         
                         VirtualInputManager:SendMouseButtonEvent(endX, swipeY, 0, false, game, 0)
                         
-                        print("Swiped on GUI element:", descendant.Name)
+                        print("Swiped on GUI at RED LINE!")
                         success = true
                         break
                     end
